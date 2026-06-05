@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Экзаменационный тест по теории и определениям (Базы данных и SQL)</title>
+    
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Firebase SDK Compat (v10) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; }
+        .fade-in { animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Кастомный скроллбар */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // ==========================================
+        // 1. НАСТРОЙКИ FIREBASE (ВСТАВЬТЕ СВОИ ДАННЫЕ)
+        // ==========================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyD3eM3LV6I2ojQjslZf6pRS2MS7anSaQGc",
+            authDomain: "teoriat-e1c38.firebaseapp.com",
+            projectId: "teoriat-e1c38",
+            storageBucket: "teoriat-e1c38.firebasestorage.app",
+            messagingSenderId: "369462729634",
+            appId: "1:369462729634:web:6e38c149bfb9bf906430fb",
+            measurementId: "G-800CF4V5QF"
+        };
+
+        // Инициализация Firebase
+        let app;
+        if (typeof __firebase_config !== 'undefined') {
+             app = firebase.initializeApp(JSON.parse(__firebase_config));
+        } else if (!firebase.apps.length) {
+             app = firebase.initializeApp(firebaseConfig);
+        } else {
+             app = firebase.app();
+        }
+
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        const getPath = (col) => {
+            if (typeof __app_id !== 'undefined' && __app_id) {
+                return `artifacts/${__app_id}/public/data/${col}`;
+            }
+            return col;
+        };
+
+        // ==========================================
+        // 2. ИСХОДНЫЕ ВОПРОСЫ (БД и SQL)
+        // ==========================================
+        const INITIAL_QUESTIONS = [
+            { num: 1, text: "Вопрос 1. Что такое «База данных» (БД) в классическом определении?", options: [
+                { text: "A) Специализированная программа для редактирования больших текстовых файлов.", isCorrect: false },
+                { text: "B) Компьютерная сеть, предназначенная для обмена информацией между пользователями.", isCorrect: false },
+                { text: "C) Организованная по определенным правилам совокупность взаимосвязанных данных, хранящихся на цифровом носителе.", isCorrect: true },
+                { text: "D) Любой жесткий диск или флеш-накопитель большой емкости.", isCorrect: false },
+                { text: "E) Таблица в формате Excel, защищенная паролем.", isCorrect: false }
+            ]},
+            { num: 2, text: "Вопрос 2. Что представляет собой «Система управления базами данных» (СУБД)?", options: [
+                { text: "A) Физический сервер, на котором хранятся файлы пользователей.", isCorrect: false },
+                { text: "B) Язык программирования высокого уровня для написания веб-сайтов.", isCorrect: false },
+                { text: "C) Специализированный комплекс программных и языковых средств, обеспечивающий централизованное управление базой данных, доступ пользователей и поддержание целостности информации.", isCorrect: true },
+                { text: "D) Отдел системных администраторов, обслуживающий серверную комнату.", isCorrect: false },
+                { text: "E) Специальная папка в операционной системе Windows.", isCorrect: false }
+            ]},
+            { num: 3, text: "Вопрос 3. Какая модель данных лежит в основе СУБД Firebird 3.0, где информация представляется в виде двумерных взаимосвязанных таблиц?", options: [
+                { text: "A) Иерархическая модель.", isCorrect: false },
+                { text: "B) Сетевая модель.", isCorrect: false },
+                { text: "C) Реляционная модель.", isCorrect: true },
+                { text: "D) Объектно-ориентированная модель.", isCorrect: false },
+                { text: "E) Графовая модель.", isCorrect: false }
+            ]},
+            { num: 4, text: "Вопрос 4. Какое определение наиболее точно описывает термин «Транзакция» в СУБД?", options: [
+                { text: "A) Процесс передачи данных с сервера на клиентский компьютер через интернет.", isCorrect: false },
+                { text: "B) Команда для полного удаления структуры базы данных.", isCorrect: false },
+                { text: "C) Логическая единица работы с данными, состоящая из одной или нескольких команд, которая выполняется целиком или не выполняется вовсе.", isCorrect: true },
+                { text: "D) Время, за которое выполняется один поисковый запрос SELECT.", isCorrect: false },
+                { text: "E) Автоматическое резервное копирование базы данных по расписанию.", isCorrect: false }
+            ]},
+            { num: 5, text: "Вопрос 5. Как в реляционной теории баз данных принято называть «строку» таблицы?", options: [
+                { text: "A) Домен.", isCorrect: false },
+                { text: "B) Кортеж.", isCorrect: true },
+                { text: "C) Атрибут.", isCorrect: false },
+                { text: "D) Сущность.", isCorrect: false },
+                { text: "E) Связь.", isCorrect: false }
+            ]},
+            { num: 6, text: "Вопрос 6. Как в реляционной теории баз данных принято называть «столбец» таблицы?", options: [
+                { text: "A) Кортеж.", isCorrect: false },
+                { text: "B) Отношение.", isCorrect: false },
+                { text: "C) Атрибут.", isCorrect: true },
+                { text: "D) Домен.", isCorrect: false },
+                { text: "E) Ключ.", isCorrect: false }
+            ]},
+            { num: 7, text: "Вопрос 7. Что такое «Домен» в теории реляционных баз данных?", options: [
+                { text: "A) Имя сервера в локальной сети.", isCorrect: false },
+                { text: "B) Уникальный идентификатор строки.", isCorrect: false },
+                { text: "C) Набор допустимых значений одного и того же типа, которые может принимать конкретный атрибут.", isCorrect: true },
+                { text: "D) Таблица, которая не имеет связей с другими таблицами.", isCorrect: false },
+                { text: "E) Время работы СУБД без перезагрузки.", isCorrect: false }
+            ]},
+            { num: 8, text: "Вопрос 8. Дайте определение понятию «Первичный ключ» (PRIMARY KEY).", options: [
+                { text: "A) Первый столбец в любой таблице, содержащий только текст.", isCorrect: false },
+                { text: "B) Минимальный набор атрибутов, однозначно идентифицирующий каждую строку в таблице и не содержащий NULL.", isCorrect: true },
+                { text: "C) Пароль главного администратора для доступа к СУБД.", isCorrect: false },
+                { text: "D) Индекс, который создается для ускорения сортировки по алфавиту.", isCorrect: false },
+                { text: "E) Связующее поле, которое указывает на другую таблицу.", isCorrect: false }
+            ]},
+            { num: 9, text: "Вопрос 9. Что такое «Внешний ключ» (FOREIGN KEY) в определении реляционных баз данных?", options: [
+                { text: "A) Первичный ключ, который хранится на внешнем жестком диске.", isCorrect: false },
+                { text: "B) Счетчик, который автоматически генерирует номера строк.", isCorrect: false },
+                { text: "C) Атрибут одной таблицы, который ссылается на первичный ключ другой таблицы для обеспечения связи между ними.", isCorrect: true },
+                { text: "D) Уникальный пароль для шифрования данных.", isCorrect: false },
+                { text: "E) Столбец, который разрешено заполнять только внешним пользователям.", isCorrect: false }
+            ]},
+            { num: 10, text: "Вопрос 10. Что означает термин «Сущностная целостность» (Entity Integrity) в реляционной модели?", options: [
+                { text: "A) Все таблицы в базе данных должны быть одинакового размера.", isCorrect: false },
+                { text: "B) База данных не должна содержать пустых ячеек (NULL).", isCorrect: false },
+                { text: "C) Любая таблица должна иметь первичный ключ, и его значения должны быть уникальными и отличными от NULL.", isCorrect: true },
+                { text: "D) В базе данных запрещено использовать текстовые типы данных.", isCorrect: false },
+                { text: "E) Пользователям запрещено вручную удалять строки из таблиц.", isCorrect: false }
+            ]},
+            { num: 11, text: "Вопрос 11. Что такое «Ссылочная целостность» (Referential Integrity)?", options: [
+                { text: "A) Состояние базы данных, при котором каждый внешний ключ строго соответствует существующему первичному ключу в родительской таблице.", isCorrect: true },
+                { text: "B) Правило, запрещающее создавать в таблице более двух индексов.", isCorrect: false },
+                { text: "C) Возможность открывать базу данных по интернет-ссылке.", isCorrect: false },
+                { text: "D) Требование СУБД, чтобы все типы данных были числовыми.", isCorrect: false },
+                { text: "E) Процесс автоматического обновления программы управления базой.", isCorrect: false }
+            ]},
+            { num: 12, text: "Вопрос 12. Что определяет «Доменная целостность» (Domain Integrity)?", options: [
+                { text: "A) Наличие прав доступа к базе данных у системного администратора.", isCorrect: false },
+                { text: "B) Соответствие значений в столбце заданному типу данных и логическим ограничениям CHECK.", isCorrect: true },
+                { text: "C) Количество дочерних таблиц, привязанных к одной родительской.", isCorrect: false },
+                { text: "D) Уникальность названий всех таблиц в схеме данных.", isCorrect: false },
+                { text: "E) Скорость обработки транзакций сервером Firebird.", isCorrect: false }
+            ]},
+            { num: 13, text: "Вопрос 13. Какое определение лучше всего описывает ограничение CHECK?", options: [
+                { text: "A) Автоматическая проверка диска на наличие поврежденных секторов.", isCorrect: false },
+                { text: "B) Требование уникальности значений в столбце.", isCorrect: false },
+                { text: "C) Логическое условие (выражение), которому должно удовлетворять значение в столбце при вставке или изменении строки.", isCorrect: true },
+                { text: "D) Команда, которая подсчитывает сумму значений в столбце.", isCorrect: false },
+                { text: "E) Метка, показывающая, что запись была проверена администратором.", isCorrect: false }
+            ]},
+            { num: 14, text: "Вопрос 14. Дайте определение понятию «Автоинкремент» (механизм IDENTITY в Firebird 3.0).", options: [
+                { text: "A) Процесс автоматического удаления старых неиспользуемых таблиц.", isCorrect: false },
+                { text: "B) Функция, которая увеличивает размер шрифта в интерфейсе базы данных.", isCorrect: false },
+                { text: "C) Свойство столбца, при котором СУБД автоматически генерирует уникальное последовательное число при добавлении новой строки.", isCorrect: true },
+                { text: "D) Защита базы данных от хакерских атак.", isCorrect: false },
+                { text: "E) Математическое округление копеек до целых рублей.", isCorrect: false }
+            ]},
+            { num: 15, text: "Вопрос 15. Как расшифровывается аббревиатура SQL?", options: [
+                { text: "A) System Query Logic (Системная логика запросов).", isCorrect: false },
+                { text: "B) Structured Query Language (Язык структурированных запросов).", isCorrect: true },
+                { text: "C) Server Quantum Language (Квантовый язык сервера).", isCorrect: false },
+                { text: "D) Sequential Query List (Последовательный список запросов).", isCorrect: false },
+                { text: "E) Simple Quality Language (Простой язык качества).", isCorrect: false }
+            ]},
+            { num: 16, text: "Вопрос 16. Что изучает подмножество языка SQL, называемое DDL (Data Definition Language)?", options: [
+                { text: "A) Команды для добавления и изменения текстовых строк в таблицах.", isCorrect: false },
+                { text: "B) Команды для создания, изменения и удаления самой структуры (схемы) объектов базы данных — таблиц, индексов, ограничений.", isCorrect: true },
+                { text: "C) Методы разграничения прав доступа пользователей к server.", isCorrect: false },
+                { text: "D) Способы шифрования паролей в операционной системе.", isCorrect: false },
+                { text: "E) Алгоритмы вычисления средних значений по столбцам.", isCorrect: false }
+            ]},
+            { num: 17, text: "Вопрос 17. Что изучает подмножество языка SQL, называемое DML (Data Manipulation Language)?", options: [
+                { text: "A) Команды для создания учетных записей пользователей.", isCorrect: false },
+                { text: "B) Команды для физического форматирования жесткого диска.", isCorrect: false },
+                { text: "C) Команды для работы с самими данными внутри таблиц — извлечение, добавление, модификация и удаление строк.", isCorrect: true },
+                { text: "D) Правила построения ER-диаграмм на бумаге.", isCorrect: false },
+                { text: "E) Способы оптимизации работы сетевых протоколов.", isCorrect: false }
+            ]},
+            { num: 18, text: "Вопрос 18. Что такое «Алиас» (Alias) в контексте написания SQL-запросов?", options: [
+                { text: "A) Скрытый вирусный код в теле транзакции.", isCorrect: false },
+                { text: "B) Временное псевдоимя, присваиваемое столбцу или таблице в рамках одного запроса для повышения читаемости кода или отчета.", isCorrect: true },
+                { text: "C) Уникальный серийный номер установленной СУБД.", isCorrect: false },
+                { text: "D) Тип данных для хранения очень длинных текстов.", isCorrect: false },
+                { text: "E) Состояние, когда база данных аварийно завершает работу.", isCorrect: false }
+            ]},
+            { num: 19, text: "Вопрос 19. Что представляет собой значение NULL в теории реляционных баз данных?", options: [
+                { text: "A) Число ноль (0) для целочисленных типов данных.", isCorrect: false },
+                { text: "B) Пустая текстовая строка ('') для типа VARCHAR.", isCorrect: false },
+                { text: "C) Специальный маркер, обозначающий, что значение в ячейке неизвестно, неопределенно или отсутствует.", isCorrect: true },
+                { text: "D) Логическая ошибка компиляции, останавливающая сервер.", isCorrect: false },
+                { text: "E) Команда, которая очищает оперативную память компьютера.", isCorrect: false }
+            ]},
+            { num: 20, text: "Вопрос 20. Какое из утверждений о поведении NULL в условиях WHERE является верным?", options: [
+                { text: "A) Выражение NULL = NULL всегда возвращает истину (True).", isCorrect: false },
+                { text: "B) Выражение NULL = 0 возвращает истину (True).", isCorrect: false },
+                { text: "C) Любое сравнение с NULL через обычные знаки равенства/неравенства возвращает значение Unknown (Ложь в контексте фильтрации строк).", isCorrect: true },
+                { text: "D) NULL автоматически исключается из таблиц при выполнении команды UPDATE.", isCorrect: false },
+                { text: "E) СУБД считает NULL самым большим числом в таблице при сортировке.", isCorrect: false }
+            ]},
+            { num: 21, text: "Вопрос 21. В чем заключается главное теоретическое различие между типами данных CHAR и VARCHAR?", options: [
+                { text: "A) CHAR хранит только числа, а VARCHAR — только буквы.", isCorrect: false },
+                { text: "B) CHAR имеет фиксированную длину и дополняется пробелами, а VARCHAR хранит строки переменной длины и экономит место на диске.", isCorrect: true },
+                { text: "C) VARCHAR вмещает в себя до 4 гигабайт данных, а CHAR — только 255 байт.", isCorrect: false },
+                { text: "D) Тип CHAR запрещено использовать в качестве первичного ключа.", isCorrect: false },
+                { text: "E) СУБД не умеет сортировать данные типа VARCHAR по алфавиту.", isCorrect: false }
+            ]},
+            { num: 22, text: "Вопрос 22. Дайте определение типу данных BLOB (Binary Large Object) в СУБД Firebird 3.0.", options: [
+                { text: "A) Специальный тип данных для автоматического подсчета сумм.", isCorrect: false },
+                { text: "B) Числовой тип данных повышенной точности для финансовых операций.", isCorrect: false },
+                { text: "C) Тип данных для хранения больших объемов неструктурированной информации (картинки, документы, длинные тексты), хранящийся отдельно от таблицы.", isCorrect: true },
+                { text: "D) Ограничение, запрещающее удаление родительских строк.", isCorrect: false },
+                { text: "E) Системный индекс, ускоряющий постраничный вывод FIRST/SKIP.", isCorrect: false }
+            ]},
+            { num: 23, text: "Вопрос 23. Какое теоретическое ограничение накладывается на столбцы типа BLOB в реляционных СУБД?", options: [
+                { text: "A) В них можно хранить только текстовые файлы в формате JSON.", isCorrect: false },
+                { text: "B) Их категорически запрещено использовать в условиях WHERE, GROUP BY, ORDER BY и обычных индексах.", isCorrect: true },
+                { text: "C) Каждая таблица может содержать не более одного поля типа BLOB.", isCorrect: false },
+                { text: "D) Данные типа BLOB стираются при закрытии транзакции.", isCorrect: false },
+                { text: "E) Этот тип данных доступен только администраторам базы.", isCorrect: false }
+            ]},
+            { num: 24, text: "Вопрос 24. Что такое «Избыточность данных» в проектировании реляционных баз данных?", options: [
+                { text: "A) Ситуация, когда объем файла базы данных превышает свободное место на жестком диске", isCorrect: false },
+                { text: "B) Многократное необоснованное дублирование одних и тех же данных в разных строках таблицы, приводящее к неэффективному использованию памяти и рискам противоречивости", isCorrect: true },
+                { text: "C) Слишком большое количество индексов, замедляющих выполнение запросов SELECT", isCorrect: false },
+                { text: "D) Наличие в одной таблице более чем десяти внешних ключей (FOREIGN KEY)", isCorrect: false },
+                { text: "E) Процесс автоматического копирования таблиц на резервный сервер", isCorrect: false }
+            ]},
+            { num: 25, text: "Вопрос 25. Какое определение лучше всего описывает «Аномалию обновления» (Update Anomaly) в ненормализованных таблицах?", options: [
+                { text: "A) Ошибка, из-за которой СУБД не может обновить версию своего программного обеспечения", isCorrect: false },
+                { text: "B) Ситуация, когда при изменении одного числового поля СУБД блокирует всю базу данных", isCorrect: false },
+                { text: "C) Проблема, при которой из-за дублирования информации приходится изменять данные во множестве строк одновременно, что часто приводит к логическим противоречиям", isCorrect: true },
+                { text: "D) Случайное удаление всей структуры таблицы вместо изменения одной ячейки", isCorrect: false },
+                { text: "E) Ситуация, когда СУБД принудительно заменяет все измененные текстовые поля на NULL", isCorrect: false }
+            ]},
+            { num: 26, text: "Вопрос 26. Дайте определение процессу «Нормализации» баз данных.", options: [
+                { text: "A) Процесс восстановления поврежденных файлов базы данных из резервной копии после сбоя", isCorrect: false },
+                { text: "B) Пошаговый метод проектирования схемы базы данных путем разделения таблиц для устранения избыточности и предотвращения аномалий", isCorrect: true },
+                { text: "C) Проверка структуры таблиц на соответствие международным стандартам безопасности", isCorrect: false },
+                { text: "D) Очистка текстовых столбцов от лишних пробелов и скрытых системных символов", isCorrect: false },
+                { text: "E) Оптимизация скорости выполнения сложных поисковых запросов SELECT", isCorrect: false }
+            ]},
+            { num: 27, text: "Вопрос 27. Каково главное теоретическое условие нахождения таблицы в Первой нормальной форме (1NF)?", options: [
+                { text: "A) Таблица должна содержать строго один внешний ключ и не иметь пустых ячеек", isCorrect: false },
+                { text: "B) Все столбцы таблицы должны быть атомарными (содержать неделимые значения), а строки — уникальными", isCorrect: true },
+                { text: "C) В таблице должно быть полностью запрещено использование неопределенных значений NULL", isCorrect: false },
+                { text: "D) Все числовые значения в таблице должны быть предварительно отсортированы по возрастанию", isCorrect: false },
+                { text: "E) Первичный ключ таблицы обязан состоять строго из двух или более столбцов", isCorrect: false }
+            ]},
+            { num: 28, text: "Вопрос 28. Какое базовое требование предъявляется к таблице для её перевода во Вторую нормальную форму (2NF)?", options: [
+                { text: "A) Таблица должна быть полностью очищена от текстовых типов данных переменной длины (VARCHAR)", isCorrect: false },
+                { text: "B) Все неключевые столбцы таблицы должны зависеть только от текстовых полей, но не от числовых", isCorrect: false },
+                { text: "C) Таблица должна находиться в 1NF, и все неключевые столбцы должны полностью зависеть от всего первичного ключа целиком, а не от его части", isCorrect: true },
+                { text: "D) В таблице должно быть создано не менее трех индексов для ускорения поиска данных", isCorrect: false },
+                { text: "E) Каждая строка дочерней таблицы обязана содержать каскадное ограничение ON DELETE CASCADE", isCorrect: false }
+            ]},
+            { num: 29, text: "Вопрос 29. Что требует правило Третьей нормальной формы (3NF) для окончательного устранения избыточности?", options: [
+                { text: "A) Таблица должна содержать только числовые идентификаторы и не иметь связей с другими таблицами", isCorrect: false },
+                { text: "B) Таблица должна находиться во 2NF, и в ней должны отсутствовать транзитивные зависимости неключевых столбцов от первичного ключа (неключевые поля не должны зависеть от других неключевых полей)", isCorrect: true },
+                { text: "C) Первичный ключ таблицы должен автоматически сбрасываться в ноль при завершении транзакции", isCorrect: false },
+                { text: "D) В таблице разрешено хранить данные только фиксированной длины типа CHAR", isCorrect: false },
+                { text: "E) Все таблицы в схеме данных должны быть соединены между собой связью «один к одному»", isCorrect: false }
+            ]},
+            { num: 30, text: "Вопрос 30. Что такое «Транзитивная зависимость», которую программист обязан устранить при переводе таблицы в 3NF?", options: [
+                { text: "A) Зависимость первичного ключа от внешнего ключа дочерней таблицы", isCorrect: false },
+                { text: "B) Ситуация, когда СУБД автоматически увеличивает значение счетчика автоинкремента на тройку", isCorrect: false },
+                { text: "C) Ситуация, когда неключевой столбец «А» зависит от неключевого столбца «Б», который, в свою очередь, зависит от первичного ключа", isCorrect: true },
+                { text: "D) Зависимость скорости выполнения запроса SELECT от количества строк в таблице", isCorrect: false },
+                { text: "E) Логическая связь между индексами и ограничениями CHECK в рамках одной схемы данных", isCorrect: false }
+            ]}
+        ];
+
+        const { useState, useEffect } = React;
+
+        // ==========================================
+        // 3. ОСНОВНОЕ ПРИЛОЖЕНИЕ (App)
+        // ==========================================
+        function App() {
+            const [user, setUser] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [config, setConfig] = useState(null);
+            const [view, setView] = useState('student_start'); // student_start, student_test, student_result, admin_login, admin_panel
+            const [studentData, setStudentData] = useState({ name: '', group: '' });
+            const [finalScore, setFinalScore] = useState(0);
+            
+            useEffect(() => {
+                const initFirebase = async () => {
+                    try {
+                        // Авторизация
+                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                            await auth.signInWithCustomToken(__initial_auth_token);
+                        } else {
+                            await auth.signInAnonymously();
+                        }
+                        
+                        auth.onAuthStateChanged(async (u) => {
+                            if (u) {
+                                setUser(u);
+                                await checkAndInitData();
+                            }
+                        });
+                    } catch (e) {
+                        console.error("Auth error:", e);
+                        setLoading(false);
+                    }
+                };
+                initFirebase();
+            }, []);
+
+            const checkAndInitData = async () => {
+                try {
+                    const settingsRef = db.collection(getPath('settings')).doc('config');
+                    let doc = await settingsRef.get();
+                    
+                    if (!doc.exists) {
+                        await settingsRef.set({
+                            isOpen: true,
+                            adminUser: 'admin',
+                            adminPass: 'admin123',
+                            groups: ['ИСП-21', 'ИСП-22', 'ПКС-31', 'ПРОГ-1']
+                        });
+                        doc = await settingsRef.get();
+                    }
+                    setConfig(doc.data());
+
+                    // Инициализация вопросов если пусто
+                    const qsRef = db.collection(getPath('questions'));
+                    const qs = await qsRef.limit(1).get();
+                    if (qs.empty) {
+                        for (let q of INITIAL_QUESTIONS) {
+                            await qsRef.add(q);
+                        }
+                    }
+
+                    // Подписка на изменения конфига (чтобы мгновенно закрывать тест)
+                    settingsRef.onSnapshot(snap => {
+                        if (snap.exists) setConfig(snap.data());
+                    });
+
+                } catch (e) {
+                    console.error("Init data error:", e);
+                }
+                setLoading(false);
+            };
+
+            if (loading) return (
+                <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
+                    <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                    <div className="text-xl font-semibold text-slate-600">Загрузка системы...</div>
+                </div>
+            );
+
+            return (
+                <div className="min-h-screen relative pb-10 text-slate-800">
+                    {view === 'student_start' && <StudentStart config={config} onStart={(data) => { setStudentData(data); setView('student_test'); }} />}
+                    {view === 'student_test' && <StudentTest studentData={studentData} onFinish={(score) => { setFinalScore(score); setView('student_result'); }} />}
+                    {view === 'student_result' && <StudentResult score={finalScore} />}
+                    
+                    {view === 'admin_login' && <AdminLogin config={config} onSuccess={() => setView('admin_panel')} onBack={() => setView('student_start')} />}
+                    {view === 'admin_panel' && <AdminPanel config={config} onLogout={() => setView('student_start')} />}
+
+                    {/* Секретная кнопка входа админа */}
+                    {view === 'student_start' && (
+                        <div 
+                            className="fixed bottom-2 right-2 text-xs opacity-5 hover:opacity-100 cursor-pointer transition-opacity duration-300 z-50 p-3 select-none"
+                            title="Вход для преподавателя"
+                            onClick={() => setView('admin_login')}
+                        >
+                            ❤️
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        // ==========================================
+        // 4. ЭКРАНЫ СТУДЕНТА
+        // ==========================================
+        function StudentStart({ config, onStart }) {
+            const [name, setName] = useState('');
+            const [group, setGroup] = useState('');
+            const [error, setError] = useState('');
+
+            if (!config?.isOpen) {
+                return (
+                    <div className="min-h-screen flex items-center justify-center fade-in px-4">
+                        <div className="bg-white p-10 rounded-2xl shadow-xl text-center max-w-md w-full border border-slate-100">
+                            <div className="text-6xl mb-6">🔒</div>
+                            <h2 className="text-2xl font-bold text-slate-800 mb-2">Тестирование закрыто</h2>
+                            <p className="text-slate-500">Преподаватель временно ограничил доступ к тесту. Пожалуйста, ожидайте команды.</p>
+                        </div>
+                    </div>
+                );
+            }
+
+            const handleStart = (e) => {
+                e.preventDefault();
+                if (name.trim().length < 3) { setError('Введите полное имя и фамилию (минимум 3 символа)'); return; }
+                if (!group) { setError('Пожалуйста, выберите вашу учебную группу'); return; }
+                onStart({ name, group });
+            };
+
+            return (
+                <div className="min-h-screen flex items-center justify-center p-4 fade-in bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjIiIGZpbGw9IiNlMmU4ZjAiLz48L3N2Zz4=')]">
+                    <form onSubmit={handleStart} className="bg-white p-8 rounded-3xl shadow-xl max-w-md w-full border border-slate-100">
+                        <div className="text-center mb-8">
+                            <div className="bg-blue-100 text-blue-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl shadow-sm">🎓</div>
+                            <h2 className="text-2xl font-bold text-slate-800 mb-1">Экзаменационный тест</h2>
+                            <p className="text-sm text-slate-500 font-medium">Теория и определения (Базы данных и SQL)</p>
+                        </div>
+                        
+                        {error && <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl mb-6 text-sm flex items-center gap-2"><span className="text-lg">⚠️</span> {error}</div>}
+
+                        <div className="mb-5">
+                            <label className="block text-slate-700 text-sm font-bold mb-2 ml-1">Фамилия и Имя</label>
+                            <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Например: Иванов Иван" 
+                                className="w-full px-4 py-3.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-slate-50"/>
+                        </div>
+
+                        <div className="mb-8">
+                            <label className="block text-slate-700 text-sm font-bold mb-2 ml-1">Учебная группа</label>
+                            <select value={group} onChange={e => setGroup(e.target.value)} 
+                                className="w-full px-4 py-3.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-slate-50 cursor-pointer appearance-none">
+                                <option value="" disabled>-- Выберите группу --</option>
+                                {config?.groups?.map((g, i) => <option key={i} value={g}>{g}</option>)}
+                            </select>
+                        </div>
+
+                        <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-4 rounded-xl transition-all shadow-lg shadow-blue-200 flex items-center justify-center gap-2">
+                            Начать тестирование <span>🚀</span>
+                        </button>
+                    </form>
+                </div>
+            );
+        }
+
+        function StudentTest({ studentData, onFinish }) {
+            const [questions, setQuestions] = useState([]);
+            const [answers, setAnswers] = useState({});
+            const [loading, setLoading] = useState(true);
+            const [submitting, setSubmitting] = useState(false);
+
+            useEffect(() => {
+                db.collection(getPath('questions')).orderBy('num').get().then(snap => {
+                    setQuestions(snap.docs.map(d => ({id: d.id, ...d.data()})));
+                    setLoading(false);
+                });
+            }, []);
+
+            const handleSubmit = async () => {
+                if(Object.keys(answers).length < questions.length && !confirm('Вы ответили не на все вопросы. Некоторые из них будут засчитаны как неверные. Завершить тест?')) return;
+                
+                setSubmitting(true);
+                let score = 0;
+                let detailedAnswers = [];
+
+                questions.forEach(q => {
+                    const selectedIdx = answers[q.id];
+                    const selectedOpt = q.options[selectedIdx];
+                    const isCorrect = selectedOpt ? selectedOpt.isCorrect : false;
+                    if(isCorrect) score++;
+                    
+                    detailedAnswers.push({
+                        questionText: q.text,
+                        selectedText: selectedOpt ? selectedOpt.text : "Не ответил",
+                        isCorrect: isCorrect
+                    });
+                });
+
+                await db.collection(getPath('results')).add({
+                    studentName: studentData.name,
+                    group: studentData.group,
+                    score: score,
+                    maxScore: questions.length,
+                    answers: detailedAnswers,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                onFinish(score);
+            };
+
+            if (loading) return <div className="text-center mt-20 text-xl font-medium text-slate-500 animate-pulse">Загрузка вопросов...</div>;
+
+            const answeredCount = Object.keys(answers).length;
+            const progress = (answeredCount / questions.length) * 100;
+
+            return (
+                <div className="max-w-4xl mx-auto p-4 pt-8 fade-in">
+                    {/* Header bar */}
+                    <div className="bg-white rounded-2xl shadow-sm p-5 mb-8 sticky top-4 z-10 border border-slate-200">
+                        <div className="flex justify-between items-center mb-4">
+                            <div>
+                                <div className="font-bold text-slate-800 text-lg">{studentData.name}</div>
+                                <div className="text-sm text-slate-500 font-medium bg-slate-100 inline-block px-2 py-0.5 rounded-md mt-1">Группа: {studentData.group}</div>
+                            </div>
+                            <div className="text-right">
+                                <div className="text-sm text-slate-500 font-medium mb-1">Прогресс</div>
+                                <div className="text-sm bg-blue-50 text-blue-700 px-3 py-1 rounded-full font-bold border border-blue-100">
+                                    {answeredCount} из {questions.length}
+                                </div>
+                            </div>
+                        </div>
+                        {/* Progress bar */}
+                        <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                            <div className="bg-blue-500 h-2 rounded-full transition-all duration-300" style={{width: `${progress}%`}}></div>
+                        </div>
+                    </div>
+
+                    <div className="space-y-6">
+                        {questions.map((q, index) => (
+                            <div key={q.id} className="bg-white rounded-2xl shadow-sm p-6 border border-slate-200 transition-all hover:shadow-md">
+                                <h3 className="text-lg font-semibold text-slate-800 mb-5 leading-relaxed">
+                                    <span className="text-blue-600 mr-1">{index + 1}.</span> {q.text.replace(/^Вопрос \d+\.\s*/, '')}
+                                </h3>
+                                <div className="space-y-3">
+                                    {q.options.map((opt, optIdx) => (
+                                        <label key={optIdx} className={`block p-4 rounded-xl border-2 cursor-pointer transition-all ${answers[q.id] === optIdx ? 'bg-blue-50 border-blue-500 shadow-sm' : 'hover:bg-slate-50 border-slate-100'}`}>
+                                            <div className="flex items-center">
+                                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mr-3 flex-shrink-0 ${answers[q.id] === optIdx ? 'border-blue-600' : 'border-slate-300'}`}>
+                                                    {answers[q.id] === optIdx && <div className="w-2.5 h-2.5 bg-blue-600 rounded-full"></div>}
+                                                </div>
+                                                <input type="radio" name={`q_${q.id}`} 
+                                                    className="hidden"
+                                                    checked={answers[q.id] === optIdx}
+                                                    onChange={() => setAnswers({...answers, [q.id]: optIdx})}
+                                                />
+                                                <span className={`text-[15px] leading-snug ${answers[q.id] === optIdx ? 'text-blue-900 font-medium' : 'text-slate-700'}`}>{opt.text}</span>
+                                            </div>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <button onClick={handleSubmit} disabled={submitting} 
+                        className={`mt-10 w-full py-5 rounded-2xl text-white font-bold text-lg mb-10 shadow-lg transition-all ${submitting ? 'bg-slate-400 cursor-not-allowed' : 'bg-emerald-500 hover:bg-emerald-600 hover:shadow-emerald-200'}`}>
+                        {submitting ? 'Обработка результатов...' : 'Завершить тестирование'}
+                    </button>
+                </div>
+            );
+        }
+
+        function StudentResult({ score }) {
+            return (
+                <div className="min-h-screen flex items-center justify-center p-4 fade-in bg-slate-50">
+                    <div className="bg-white p-10 rounded-3xl shadow-xl text-center max-w-md w-full border-t-8 border-emerald-500">
+                        <div className="text-6xl mb-4 animate-bounce">🏆</div>
+                        <h2 className="text-3xl font-extrabold text-slate-800 mb-2">Тест завершен!</h2>
+                        <p className="text-slate-500 mb-8 font-medium">Ваши ответы успешно сохранены в базе.</p>
+                        
+                        <div className="bg-slate-50 rounded-2xl p-8 mb-8 border border-slate-100 shadow-inner">
+                            <div className="text-sm text-slate-400 uppercase tracking-widest font-bold mb-2">Ваш итоговый балл</div>
+                            <div className="text-6xl font-black text-blue-600">{score}</div>
+                        </div>
+                        
+                        <button onClick={() => window.location.reload()} className="w-full py-3 px-4 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold transition-colors">
+                            Вернуться на главную
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        // ==========================================
+        // 5. ПАНЕЛЬ АДМИНИСТРАТОРА
+        // ==========================================
+        function AdminLogin({ config, onSuccess, onBack }) {
+            const [login, setLogin] = useState('');
+            const [password, setPassword] = useState('');
+            const [error, setError] = useState('');
+
+            const handleLogin = (e) => {
+                e.preventDefault();
+                if (login === config.adminUser && password === config.adminPass) {
+                    onSuccess();
+                } else {
+                    setError('Неверный логин или пароль');
+                }
+            };
+
+            return (
+                <div className="fixed inset-0 flex items-center justify-center bg-slate-900/90 backdrop-blur-sm p-4 fade-in z-50">
+                    <div className="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full border border-slate-100">
+                        <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">🔐</div>
+                        <h2 className="text-2xl font-bold text-center text-slate-800 mb-6">Вход для преподавателя</h2>
+                        
+                        {error && <div className="bg-red-50 text-red-600 px-3 py-2 rounded-lg mb-4 text-center text-sm font-medium">{error}</div>}
+                        
+                        <form onSubmit={handleLogin}>
+                            <div className="mb-4">
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1 ml-1">Логин</label>
+                                <input type="text" value={login} onChange={e=>setLogin(e.target.value)}
+                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all" />
+                            </div>
+                            <div className="mb-6">
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1 ml-1">Пароль</label>
+                                <input type="password" value={password} onChange={e=>setPassword(e.target.value)}
+                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all" />
+                            </div>
+                            <button className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3.5 px-4 rounded-xl transition-colors mb-4 shadow-lg">Войти в панель</button>
+                            <button type="button" onClick={onBack} className="w-full text-slate-500 hover:text-slate-800 font-medium text-sm py-2 transition-colors">Вернуться к тесту</button>
+                        </form>
+                    </div>
+                </div>
+            );
+        }
+
+        function AdminPanel({ config, onLogout }) {
+            const [activeTab, setActiveTab] = useState('results'); // results, questions, settings
+
+            return (
+                <div className="fixed inset-0 bg-slate-50 flex flex-col md:flex-row fade-in z-40">
+                    {/* Sidebar */}
+                    <div className="w-full md:w-72 bg-slate-900 text-slate-300 flex flex-col shadow-2xl z-10 relative">
+                        <div className="p-6 border-b border-slate-800/50 flex flex-col gap-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center text-white text-xl shadow-lg shadow-blue-500/20">🎓</div>
+                                <div>
+                                    <h1 className="font-bold text-white text-lg leading-tight">Exam Panel</h1>
+                                    <span className="text-xs text-blue-400 font-medium">Teacher Dashboard</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex-1 p-4 space-y-2 mt-2">
+                            <button onClick={() => setActiveTab('results')} className={`w-full text-left px-4 py-3.5 rounded-xl flex items-center gap-3 font-medium transition-all ${activeTab === 'results' ? 'bg-blue-600 text-white shadow-md' : 'hover:bg-slate-800/50 hover:text-white'}`}>
+                                <span className="text-xl">📊</span> Результаты
+                            </button>
+                            <button onClick={() => setActiveTab('questions')} className={`w-full text-left px-4 py-3.5 rounded-xl flex items-center gap-3 font-medium transition-all ${activeTab === 'questions' ? 'bg-blue-600 text-white shadow-md' : 'hover:bg-slate-800/50 hover:text-white'}`}>
+                                <span className="text-xl">📝</span> Редактор вопросов
+                            </button>
+                            <button onClick={() => setActiveTab('settings')} className={`w-full text-left px-4 py-3.5 rounded-xl flex items-center gap-3 font-medium transition-all ${activeTab === 'settings' ? 'bg-blue-600 text-white shadow-md' : 'hover:bg-slate-800/50 hover:text-white'}`}>
+                                <span className="text-xl">⚙️</span> Настройки системы
+                            </button>
+                        </div>
+                        <div className="p-4 border-t border-slate-800/50">
+                            <button onClick={onLogout} className="w-full flex items-center justify-center gap-2 text-sm bg-slate-800/50 hover:bg-slate-800 text-slate-300 hover:text-white py-3 rounded-xl transition-colors font-medium">
+                                <span>🚪</span> Выйти из панели
+                            </button>
+                        </div>
+                    </div>
+                    
+                    {/* Content Area */}
+                    <div className="flex-1 overflow-y-auto h-screen bg-slate-50">
+                        <div className="p-6 md:p-10 max-w-6xl mx-auto">
+                            {activeTab === 'results' && <AdminResults config={config} />}
+                            {activeTab === 'questions' && <AdminQuestions />}
+                            {activeTab === 'settings' && <AdminSettings config={config} />}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- Tabs Content ---
+
+        function AdminResults({ config }) {
+            const [results, setResults] = useState([]);
+            const [filterGroup, setFilterGroup] = useState('Все');
+
+            useEffect(() => {
+                const unsub = db.collection(getPath('results')).orderBy('timestamp', 'desc').onSnapshot(snap => {
+                    setResults(snap.docs.map(d => ({id: d.id, ...d.data(), expanded: false})));
+                });
+                return () => unsub();
+            }, []);
+
+            const toggleExpand = (id) => {
+                setResults(results.map(r => r.id === id ? {...r, expanded: !r.expanded} : r));
+            };
+
+            const adjustScore = async (id, currentScore, delta) => {
+                const newScore = Math.max(0, currentScore + delta);
+                await db.collection(getPath('results')).doc(id).update({ score: newScore });
+            };
+
+            const deleteResult = async (id) => {
+                if(confirm('Вы уверены, что хотите удалить результат этого студента?')) {
+                    await db.collection(getPath('results')).doc(id).delete();
+                }
+            };
+
+            const filtered = filterGroup === 'Все' ? results : results.filter(r => r.group === filterGroup);
+            const avgScore = filtered.length ? (filtered.reduce((sum, r) => sum + r.score, 0) / filtered.length).toFixed(1) : 0;
+
+            return (
+                <div className="fade-in">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
+                        <div>
+                            <h2 className="text-3xl font-extrabold text-slate-900 mb-2">Сводка результатов</h2>
+                            <div className="flex gap-4 text-sm">
+                                <div className="bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm font-medium text-slate-600">Всего сдано: <span className="text-slate-900">{filtered.length}</span></div>
+                                <div className="bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm font-medium text-slate-600">Средний балл: <span className="text-blue-600 font-bold">{avgScore}</span></div>
+                            </div>
+                        </div>
+                        <select value={filterGroup} onChange={e => setFilterGroup(e.target.value)} className="px-4 py-2.5 rounded-xl border border-slate-200 shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-slate-700 min-w-[200px] cursor-pointer appearance-none">
+                            <option value="Все">🎓 Все группы</option>
+                            {config?.groups?.map((g,i) => <option key={i} value={g}>{g}</option>)}
+                        </select>
+                    </div>
+
+                    <div className="bg-white shadow-sm border border-slate-200 rounded-2xl overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse min-w-[800px]">
+                                <thead>
+                                    <tr className="bg-slate-50/50 text-slate-500 text-xs uppercase tracking-wider border-b border-slate-200">
+                                        <th className="p-5 font-bold">Студент</th>
+                                        <th className="p-5 font-bold">Группа</th>
+                                        <th className="p-5 font-bold">Время сдачи</th>
+                                        <th className="p-5 font-bold text-center">Итог. балл</th>
+                                        <th className="p-5 font-bold text-right">Управление</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {filtered.length === 0 && <tr><td colSpan="5" className="p-10 text-center text-slate-500 font-medium">Нет результатов для отображения</td></tr>}
+                                    {filtered.map(r => (
+                                        <React.Fragment key={r.id}>
+                                            <tr className={`transition-colors hover:bg-slate-50 ${r.expanded ? 'bg-blue-50/30' : ''}`}>
+                                                <td className="p-5 font-bold text-slate-800">{r.studentName}</td>
+                                                <td className="p-5"><span className="bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md text-sm font-semibold">{r.group}</span></td>
+                                                <td className="p-5 text-slate-500 text-sm font-medium">
+                                                    {r.timestamp ? new Date(r.timestamp.toDate()).toLocaleString('ru-RU', {day: '2-digit', month: '2-digit', hour: '2-digit', minute:'2-digit'}) : 'Только что'}
+                                                </td>
+                                                <td className="p-5">
+                                                    <div className="flex items-center justify-center gap-1 bg-slate-50 rounded-lg p-1 border border-slate-200 w-max mx-auto">
+                                                        <button onClick={()=>adjustScore(r.id, r.score, -1)} className="w-7 h-7 rounded hover:bg-white text-slate-400 hover:text-red-500 hover:shadow-sm flex items-center justify-center font-bold transition-all">-</button>
+                                                        <span className="font-black text-lg text-slate-800 w-8 text-center">{r.score}</span>
+                                                        <button onClick={()=>adjustScore(r.id, r.score, 1)} className="w-7 h-7 rounded hover:bg-white text-slate-400 hover:text-emerald-500 hover:shadow-sm flex items-center justify-center font-bold transition-all">+</button>
+                                                    </div>
+                                                </td>
+                                                <td className="p-5 text-right">
+                                                    <div className="flex justify-end gap-2">
+                                                        <button onClick={() => toggleExpand(r.id)} className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${r.expanded ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+                                                            {r.expanded ? 'Скрыть ответы' : 'Ответы'}
+                                                        </button>
+                                                        <button onClick={() => deleteResult(r.id)} className="w-8 h-8 flex items-center justify-center rounded-lg bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-colors" title="Удалить">
+                                                            🗑️
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {r.expanded && (
+                                                <tr className="bg-slate-50/80 border-b-2 border-slate-200">
+                                                    <td colSpan="5" className="p-6">
+                                                        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-inner max-h-[400px] overflow-y-auto space-y-4">
+                                                            <h4 className="font-bold text-slate-800 border-b pb-2 mb-3">Ответы студента:</h4>
+                                                            {r.answers.map((ans, idx) => (
+                                                                <div key={idx} className="text-sm">
+                                                                    <div className="font-semibold text-slate-700 mb-1.5">{idx+1}. {ans.questionText}</div>
+                                                                    <div className={`flex items-start gap-2 p-3 rounded-lg border ${ans.isCorrect ? 'bg-emerald-50 border-emerald-100 text-emerald-800' : 'bg-red-50 border-red-100 text-red-800'}`}>
+                                                                        <span className="text-base mt-[-2px]">{ans.isCorrect ? '✅' : '❌'}</span>
+                                                                        <span className="font-medium leading-snug">{ans.selectedText}</span>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </React.Fragment>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function AdminQuestions() {
+            const [questions, setQuestions] = useState([]);
+            const [editingId, setEditingId] = useState(null);
+
+            useEffect(() => {
+                const unsub = db.collection(getPath('questions')).orderBy('num').onSnapshot(snap => {
+                    setQuestions(snap.docs.map(d => ({id: d.id, ...d.data()})));
+                });
+                return () => unsub();
+            }, []);
+
+            const addQuestion = async () => {
+                const newNum = questions.length ? Math.max(...questions.map(q=>q.num)) + 1 : 1;
+                await db.collection(getPath('questions')).add({
+                    num: newNum,
+                    text: `Вопрос ${newNum}. Новый вопрос`,
+                    options: [
+                        {text: "Правильный вариант ответа", isCorrect: true},
+                        {text: "Неправильный вариант 1", isCorrect: false},
+                        {text: "Неправильный вариант 2", isCorrect: false}
+                    ]
+                });
+            };
+
+            const deleteQuestion = async (id) => {
+                if(confirm('Вы уверены, что хотите безвозвратно удалить этот вопрос?')) {
+                    await db.collection(getPath('questions')).doc(id).delete();
+                }
+            };
+
+            const updateQuestion = async (id, data) => {
+                await db.collection(getPath('questions')).doc(id).update(data);
+                setEditingId(null);
+            };
+
+            const moveQuestion = async (index, direction) => {
+                if (index + direction < 0 || index + direction >= questions.length) return;
+                const q1 = questions[index];
+                const q2 = questions[index + direction];
+                await db.collection(getPath('questions')).doc(q1.id).update({num: q2.num});
+                await db.collection(getPath('questions')).doc(q2.id).update({num: q1.num});
+            };
+
+            return (
+                <div className="fade-in max-w-4xl">
+                    <div className="flex justify-between items-center mb-8">
+                        <div>
+                            <h2 className="text-3xl font-extrabold text-slate-900 mb-1">База вопросов</h2>
+                            <p className="text-slate-500 font-medium">Всего вопросов в тесте: <span className="text-slate-800 font-bold">{questions.length}</span></p>
+                        </div>
+                        <button onClick={addQuestion} className="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-3 rounded-xl font-bold shadow-lg shadow-emerald-500/30 transition-all flex items-center gap-2">
+                            <span className="text-xl leading-none">+</span> Добавить вопрос
+                        </button>
+                    </div>
+
+                    <div className="space-y-4 pb-10">
+                        {questions.map((q, index) => (
+                            <div key={q.id} className={`bg-white p-6 rounded-2xl shadow-sm border transition-all ${editingId === q.id ? 'border-blue-400 ring-4 ring-blue-50' : 'border-slate-200 hover:border-slate-300'}`}>
+                                <div className="flex gap-5">
+                                    {/* Управление порядком */}
+                                    <div className="flex flex-col items-center justify-center gap-1 w-10 shrink-0">
+                                        <button onClick={()=>moveQuestion(index, -1)} disabled={index===0} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-800 disabled:opacity-20 transition-colors">▲</button>
+                                        <span className="font-black text-slate-300 text-lg">{q.num}</span>
+                                        <button onClick={()=>moveQuestion(index, 1)} disabled={index===questions.length-1} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-800 disabled:opacity-20 transition-colors">▼</button>
+                                    </div>
+
+                                    {/* Контент вопроса */}
+                                    <div className="flex-1">
+                                        {editingId === q.id ? (
+                                            <QuestionEditor q={q} onSave={(data) => updateQuestion(q.id, data)} onCancel={() => setEditingId(null)} />
+                                        ) : (
+                                            <div>
+                                                <div className="flex justify-between items-start mb-4 gap-4">
+                                                    <h3 className="font-bold text-lg text-slate-800 leading-snug whitespace-pre-wrap">{q.text}</h3>
+                                                    <div className="flex gap-2 shrink-0">
+                                                        <button onClick={()=>setEditingId(q.id)} className="px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-sm font-bold transition-colors">✎ Редакт.</button>
+                                                        <button onClick={()=>deleteQuestion(q.id)} className="w-8 h-8 flex items-center justify-center bg-red-50 text-red-500 hover:bg-red-500 hover:text-white rounded-lg transition-colors">✕</button>
+                                                    </div>
+                                                </div>
+                                                <ul className="space-y-2">
+                                                    {q.options.map((opt, i) => (
+                                                        <li key={i} className={`text-[15px] px-4 py-3 rounded-xl border flex items-start gap-3 ${opt.isCorrect ? 'bg-emerald-50/50 text-emerald-900 border-emerald-200' : 'text-slate-600 bg-slate-50 border-slate-100'}`}>
+                                                            {opt.isCorrect ? <span className="font-bold text-emerald-500 mt-[2px]">✓</span> : <span className="w-3.5 h-3.5 rounded-full border-2 border-slate-300 mt-[5px] inline-block"></span>}
+                                                            <span className="leading-snug">{opt.text}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        // Вспомогательный компонент редактора
+        function QuestionEditor({ q, onSave, onCancel }) {
+            const [text, setText] = useState(q.text);
+            const [num, setNum] = useState(q.num);
+            const [options, setOptions] = useState([...q.options]);
+
+            const updateOption = (idx, field, val) => {
+                const newOpts = [...options];
+                newOpts[idx][field] = val;
+                setOptions(newOpts);
+            };
+
+            const setCorrect = (idx) => {
+                const newOpts = options.map((opt, i) => ({...opt, isCorrect: i === idx}));
+                setOptions(newOpts);
+            };
+
+            const addOption = () => setOptions([...options, {text: "Новый вариант ответа", isCorrect: false}]);
+            const removeOption = (idx) => setOptions(options.filter((_, i) => i !== idx));
+
+            return (
+                <div className="animate-fade-in bg-slate-50 p-5 rounded-xl border border-slate-200">
+                    <div className="flex gap-4 mb-5">
+                        <div className="w-20">
+                            <label className="block text-xs font-bold text-slate-500 mb-1">НОМЕР</label>
+                            <input type="number" value={num} onChange={e=>setNum(Number(e.target.value))} className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none font-bold" />
+                        </div>
+                        <div className="flex-1">
+                            <label className="block text-xs font-bold text-slate-500 mb-1">ТЕКСТ ВОПРОСА</label>
+                            <textarea value={text} onChange={e=>setText(e.target.value)} rows="3" className="w-full border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none font-medium resize-none"></textarea>
+                        </div>
+                    </div>
+                    
+                    <div className="mb-5">
+                        <label className="block text-xs font-bold text-slate-500 mb-2">ВАРИАНТЫ ОТВЕТОВ (отметьте правильный)</label>
+                        <div className="space-y-2">
+                            {options.map((opt, idx) => (
+                                <div key={idx} className={`flex items-start gap-3 p-2 rounded-lg border ${opt.isCorrect ? 'bg-emerald-50 border-emerald-200' : 'bg-white border-slate-200'}`}>
+                                    <input type="radio" name={`correct_${q.id}`} checked={opt.isCorrect} onChange={() => setCorrect(idx)} className="w-5 h-5 mt-2.5 accent-emerald-500 cursor-pointer" title="Отметить как правильный" />
+                                    <textarea value={opt.text} onChange={e=>updateOption(idx, 'text', e.target.value)} rows="2" className="flex-1 border-0 bg-transparent p-1.5 focus:ring-2 focus:ring-blue-200 rounded outline-none resize-none text-[15px]" placeholder="Введите текст варианта..."></textarea>
+                                    <button onClick={()=>removeOption(idx)} className="text-slate-400 hover:text-red-500 hover:bg-red-50 w-8 h-8 rounded-lg flex items-center justify-center mt-1 transition-colors">✕</button>
+                                </div>
+                            ))}
+                        </div>
+                        <button onClick={addOption} className="text-blue-600 text-sm font-bold mt-3 hover:underline flex items-center gap-1 bg-blue-50 px-3 py-1.5 rounded-lg w-max"><span>+</span> Добавить вариант</button>
+                    </div>
+
+                    <div className="flex gap-3 justify-end pt-4 border-t border-slate-200">
+                        <button onClick={onCancel} className="px-5 py-2.5 rounded-xl text-slate-600 bg-white border border-slate-300 hover:bg-slate-50 font-bold transition-colors">Отмена</button>
+                        <button onClick={() => onSave({text, num, options})} className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition-colors shadow-lg shadow-blue-500/30">💾 Сохранить</button>
+                    </div>
+                </div>
+            );
+        }
+
+        function AdminSettings({ config }) {
+            const [newGroup, setNewGroup] = useState('');
+            const [adminUser, setAdminUser] = useState(config.adminUser);
+            const [adminPass, setAdminPass] = useState(config.adminPass);
+            const [saved, setSaved] = useState(false);
+
+            const toggleStatus = async () => {
+                await db.collection(getPath('settings')).doc('config').update({ isOpen: !config.isOpen });
+            };
+
+            const addGroup = async (e) => {
+                e.preventDefault();
+                if(!newGroup.trim()) return;
+                const updatedGroups = [...(config.groups || []), newGroup.trim()];
+                await db.collection(getPath('settings')).doc('config').update({ groups: updatedGroups });
+                setNewGroup('');
+            };
+
+            const removeGroup = async (g) => {
+                if(!confirm(`Удалить группу "${g}"?`)) return;
+                const updatedGroups = config.groups.filter(x => x !== g);
+                await db.collection(getPath('settings')).doc('config').update({ groups: updatedGroups });
+            };
+
+            const saveCreds = async (e) => {
+                e.preventDefault();
+                await db.collection(getPath('settings')).doc('config').update({ adminUser, adminPass });
+                setSaved(true);
+                setTimeout(() => setSaved(false), 3000);
+            };
+
+            return (
+                <div className="fade-in max-w-3xl space-y-6">
+                    <div>
+                        <h2 className="text-3xl font-extrabold text-slate-900 mb-2">Настройки системы</h2>
+                        <p className="text-slate-500 font-medium mb-8">Управление доступом, группами и безопасностью</p>
+                    </div>
+
+                    {/* Статус теста */}
+                    <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                        <div>
+                            <h3 className="font-bold text-xl text-slate-800 mb-1">Доступ к тестированию</h3>
+                            <p className="text-slate-500 text-sm">Открывает или закрывает возможность студентам войти в тест.</p>
+                        </div>
+                        <button onClick={toggleStatus} className={`px-8 py-3.5 rounded-xl font-bold text-white transition-all shadow-lg min-w-[220px] flex items-center justify-center gap-2 ${config.isOpen ? 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/30' : 'bg-red-500 hover:bg-red-600 shadow-red-500/30'}`}>
+                            {config.isOpen ? <><span className="text-xl">🟢</span> ТЕСТ ОТКРЫТ</> : <><span className="text-xl">🔴</span> ТЕСТ ЗАКРЫТ</>}
+                        </button>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-6">
+                        {/* Группы */}
+                        <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+                            <h3 className="font-bold text-lg text-slate-800 mb-1 flex items-center gap-2"><span className="text-blue-500">👥</span> Учебные группы</h3>
+                            <p className="text-slate-400 text-xs mb-5 uppercase tracking-wide font-bold">Список для выбора при старте</p>
+                            
+                            <form onSubmit={addGroup} className="flex gap-2 mb-6">
+                                <input type="text" value={newGroup} onChange={e=>setNewGroup(e.target.value)} placeholder="Название (напр. ИСП-21)" className="flex-1 border border-slate-300 bg-slate-50 rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all" />
+                                <button type="submit" className="bg-slate-800 text-white px-5 py-3 rounded-xl hover:bg-slate-900 font-bold transition-colors">➕</button>
+                            </form>
+                            
+                            <div className="flex flex-wrap gap-2">
+                                {config?.groups?.map((g, i) => (
+                                    <div key={i} className="bg-white border border-slate-200 shadow-sm text-slate-700 px-3.5 py-1.5 rounded-lg text-sm font-medium flex items-center gap-3">
+                                        {g}
+                                        <button onClick={()=>removeGroup(g)} className="text-slate-300 hover:text-red-500 focus:outline-none transition-colors">✕</button>
+                                    </div>
+                                ))}
+                                {(!config?.groups || config.groups.length === 0) && <span className="text-sm text-slate-400 italic">Список групп пуст</span>}
+                            </div>
+                        </div>
+
+                        {/* Доступы админа */}
+                        <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+                            <h3 className="font-bold text-lg text-slate-800 mb-1 flex items-center gap-2"><span className="text-blue-500">🔑</span> Данные для входа</h3>
+                            <p className="text-slate-400 text-xs mb-5 uppercase tracking-wide font-bold">Логин и пароль преподавателя</p>
+                            
+                            <form onSubmit={saveCreds} className="space-y-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 mb-1.5 ml-1">ЛОГИН</label>
+                                    <input type="text" value={adminUser} onChange={e=>setAdminUser(e.target.value)} className="w-full border border-slate-300 bg-slate-50 rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all font-medium" required />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 mb-1.5 ml-1">ПАРОЛЬ</label>
+                                    <input type="text" value={adminPass} onChange={e=>setAdminPass(e.target.value)} className="w-full border border-slate-300 bg-slate-50 rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all font-medium" required />
+                                </div>
+                                <button type="submit" className="w-full bg-slate-800 text-white px-4 py-3.5 rounded-xl hover:bg-slate-900 font-bold transition-colors flex justify-center items-center gap-2 shadow-md mt-2">
+                                    Сохранить доступы {saved && <span className="text-emerald-400 font-bold">✓ Успешно</span>}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
